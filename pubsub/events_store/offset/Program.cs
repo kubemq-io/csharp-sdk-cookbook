@@ -7,7 +7,7 @@ namespace offset
     {
         static void Main(string[] args)
         {
-            string ChannelName = "events-store-offset-types",
+            string ChannelName = "events-store-offset",
              KubeMQServerAddress = "localhost:50000";
 
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace stream
+namespace single
 {
     class Program
     {

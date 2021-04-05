@@ -53,11 +53,9 @@ Steps:
 
 ## Install CSharp SDK
 
-Use pip to install kubemq's CSharp sdk:
+Install using Nuget 
 
-```
-pip install kubemq
-```
+Kubemq : https://docs.microsoft.com/en-us/nuget/quickstart/install-and-use-a-package-in-visual-studio
 
 ## Recipes
 

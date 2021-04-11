@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace ack
+namespace single
 {
     class Program
     {

@@ -7,7 +7,7 @@ namespace basic
         static void Main(string[] args)
         {
             string ChannelName = "test",
-             ClientID = "C#-sdk-cookbook-client-connectivity",
+             ClientID = "C#-sdk-cookbook-client-basic",
              KubeMQServerAddress = "localhost:50000";
 
             var subscriber = new KubeMQ.SDK.csharp.Events.Subscriber(KubeMQServerAddress);

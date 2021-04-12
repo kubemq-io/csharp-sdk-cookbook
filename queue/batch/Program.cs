@@ -1,7 +1,9 @@
 ﻿using KubeMQ.SDK.csharp.Queue;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using KubeMQ.Grpc;
 
 namespace batch
 {
@@ -11,30 +13,12 @@ namespace batch
         {
             string QueueName = "queue-batch",
              KubeMQServerAddress = "localhost:50000";
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-batch-client", KubeMQServerAddress);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-batch-client", null,12,KubeMQServerAddress,null);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
-                {
-                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
-                    Metadata = "some-metadata",
-                    Tags = new Dictionary<string, string>()
-                {
-                    {"Action",$"SendQueueMessage" }
-                }
-                });
-                if (res.IsError)
-                {
-                    Console.WriteLine($"message enqueue error, error:{res.Error}");
-                }
-                else
-                {
-                    Console.WriteLine($"message sent at, {res.SentAt}");
-                }
-
                 //Simple send Bulk of messages
                 List<Message> msgs = new List<Message>();
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 1000; i++)
                 {
                     msgs.Add(new KubeMQ.SDK.csharp.Queue.Message
                     {
@@ -53,18 +37,13 @@ namespace batch
                 if (resBatch.HaveErrors)
                 {
                     Console.WriteLine($"message sent batch has errors");
+                    System.Environment.Exit(1);
                 }
-                foreach (var item in resBatch.Results)
+                else
                 {
-                    if (item.IsError)
-                    {
-                        Console.WriteLine($"message enqueue error, error:{item.Error}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"message sent at, {item.SentAt}");
-                    }
+                    Console.WriteLine($"{resBatch.Results.Count()} messages sent");    
                 }
+                
             }
 
             catch (Exception ex)
@@ -75,16 +54,22 @@ namespace batch
 
             Thread.Sleep(1000);
 
-            var msg = queue.ReceiveQueueMessages();
-            if (msg.IsError)
+            try
             {
-                Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                var msg = queue.ReceiveQueueMessages(1000);
+                if (msg.IsError)
+                {
+                    Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                }
+                {
+                    Console.WriteLine($"{msg.Messages.Count()} messages received");    
+                }
             }
-            foreach (var item in msg.Messages)
+            catch (Exception e)
             {
-                Console.WriteLine($"message received body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(item.Body)}");
-
+                Console.WriteLine(e.Message);
             }
+            
         }
     }
 }

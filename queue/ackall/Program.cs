@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace ack
+namespace ackall
 {
     class Program
     {
         static void Main(string[] args)
         {
-            string QueueName = "queue-ack",
+            string QueueName = "queue-ackall",
              KubeMQServerAddress = "localhost:50000";
 
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-ack-client", KubeMQServerAddress);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-ackall-client", KubeMQServerAddress);
             try
             {
                 var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
@@ -46,8 +46,11 @@ namespace ack
                 {
                     Console.WriteLine($"message ack error, error:{ackmsg.Error}");
                 }
-                Console.WriteLine("DONE");
-                Console.ReadLine();
+
+                else
+                {
+                    Console.WriteLine($"Total Messages Acked:{ackmsg.AffectedMessages} ");    
+                }
 
             }
         }

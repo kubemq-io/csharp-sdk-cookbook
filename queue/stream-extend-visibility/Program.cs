@@ -71,7 +71,7 @@ namespace extend
 
             Console.WriteLine("Approved. work for 2.5 seconds");
             Thread.Sleep(2500);
-            Console.WriteLine("Work done... ack the message");
+            Console.WriteLine("Work done... ackall the message");
             try
             {
                 var resAck = transaction.AckMessage(resRec.Message.Attributes.Sequence);

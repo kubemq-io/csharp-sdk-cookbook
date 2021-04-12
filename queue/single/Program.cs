@@ -8,10 +8,10 @@ namespace single
     {
         static void Main(string[] args)
         {
-            string QueueName = "queue",
+            string QueueName = "stream",
              KubeMQServerAddress = "localhost:50000";
 
-            var  queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-single-client", KubeMQServerAddress);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-stream-client-sender", KubeMQServerAddress);
             try
             {
                 var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
@@ -36,24 +36,58 @@ namespace single
             {
                 Console.WriteLine(ex.Message);
                 System.Environment.Exit(1);
-            }
+           }
+            
+            var receiver = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-stream-client", KubeMQServerAddress);
 
-            Thread.Sleep(1000);
-
-            var msg = queue.ReceiveQueueMessages();
-            if (msg.IsError)
+            while (true)
             {
-                Console.WriteLine($"message error, error:{msg.Error}");
-            }
-            foreach (var item in msg.Messages)
-            {
-                Console.WriteLine($"message received body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(item.Body)}");
+                Console.WriteLine("Checking Messages");
+                var transaction = receiver.CreateTransaction();
+                KubeMQ.SDK.csharp.Queue.Stream.TransactionMessagesResponse resRec;
+                try
+                {
+                    resRec = transaction.Receive(1, 5);
+                    if (resRec.IsError)
+                    {
+                        Console.WriteLine($"Message dequeue error, error:{resRec.Error}");
+                        transaction.Close();
+                        
+                    }
+                    else
+                    {
+                        Console.WriteLine($"message received body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(resRec.Message.Body)}");
+                        try
+                        {
+                            var ackRes = transaction.AckMessage(resRec.Message.Attributes.Sequence);
+                            if (ackRes.IsError)
+                            {
+                                Console.WriteLine($"Error in ackall Message, error:{ackRes.Error}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Ack completed");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
+                        finally
+                        {
+                            transaction.Close();
+                        }
+                    }
 
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine($"Message Receive error, error:{ex.Message}");
+                }
             }
-            Console.WriteLine("DONE");
-            Console.ReadLine();
-
         }
+           
     }
    
 }

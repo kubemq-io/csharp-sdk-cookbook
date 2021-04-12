@@ -55,7 +55,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "single", "queue\single\sing
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "peek", "queue\peek\peek.csproj", "{26A240F3-56A5-44D4-86F5-759B7E805C75}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ack", "queue\ack\ack.csproj", "{BF9CCCE2-CBCF-4D62-8D4F-AE5733758FC1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ackall", "queue\ackall\ackall.csproj", "{BF9CCCE2-CBCF-4D62-8D4F-AE5733758FC1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "batch", "queue\batch\batch.csproj", "{6F12F746-3B67-4F15-8516-A3A8D52B51AF}"
 EndProject

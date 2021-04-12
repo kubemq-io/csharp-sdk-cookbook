@@ -1,37 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using KubeMQ.SDK.csharp.Queue;
 
 namespace peek
 {
-    class Program
+   class Program
     {
         static void Main(string[] args)
         {
             string QueueName = "queue-peek",
              KubeMQServerAddress = "localhost:50000";
-
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-peek-client", KubeMQServerAddress);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-peek-client", null,12,KubeMQServerAddress,null);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                //Simple send Bulk of messages
+                List<Message> msgs = new List<Message>();
+                for (int i = 0; i < 1000; i++)
                 {
-                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
-                    Metadata = "some-metadata",
-                    Tags = new Dictionary<string, string>()
-                {
-                    {"Action",$"SendQueueMessage" }
+                    msgs.Add(new KubeMQ.SDK.csharp.Queue.Message
+                    {
+                        MessageID = i.ToString(),
+                        Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray($"im Message {i}"),
+                        Metadata = "some-metadata",
+                        Tags = new Dictionary<string, string>()/* ("Action", $"Batch_{testGui}_{i}")*/ 
+                    {
+                        {"Action",$"Batch_{i}"}
+                    }
+                    });
                 }
-                });
-                if (res.IsError)
+
+                //Batch send messages
+                var resBatch = queue.Batch(msgs);
+                if (resBatch.HaveErrors)
                 {
-                    Console.WriteLine($"message enqueue error, error:{res.Error}");
+                    Console.WriteLine($"message sent batch has errors");
+                    System.Environment.Exit(1);
                 }
                 else
                 {
-                    Console.WriteLine($"message sent at, {res.SentAt}");
+                    Console.WriteLine($"{resBatch.Results.Count()} messages sent");    
                 }
+                
             }
+
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
@@ -40,20 +53,39 @@ namespace peek
 
             Thread.Sleep(1000);
 
-            var peekmsg = queue.PeekQueueMessage(1);
+            try
             {
-                if (peekmsg.IsError)
+                Console.WriteLine("Peeking 1000 messages");
+                var msg = queue.Peek(1000,2);
+                if (msg.IsError)
                 {
-                    Console.WriteLine($"message peek error, error:{peekmsg.Error}");
+                    Console.WriteLine($"message dequeue error, error:{msg.Error}");
                 }
-                foreach (var item in peekmsg.Messages)
                 {
-                    Console.WriteLine($"message received body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(item.Body)}");
+                    Console.WriteLine($"{msg.Messages.Count()} messages peeked");    
                 }
-
             }
-            Console.WriteLine("DONE");
-            Console.ReadLine();
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            try
+            {
+                Console.WriteLine("Pulling 1000 messages");
+                var msg = queue.Peek(1000,2);
+                if (msg.IsError)
+                {
+                    Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                }
+                {
+                    Console.WriteLine($"{msg.Messages.Count()} messages recevied");    
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
         }
     }
 }

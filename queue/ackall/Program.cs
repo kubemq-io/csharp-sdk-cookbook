@@ -1,37 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using KubeMQ.SDK.csharp.Queue;
 
 namespace ackall
 {
-    class Program
+        class Program
     {
         static void Main(string[] args)
         {
             string QueueName = "queue-ackall",
-             KubeMQServerAddress = "localhost:50000";
+                KubeMQServerAddress = "localhost:50000";
 
             var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-ackall-client", KubeMQServerAddress);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                //Simple send Bulk of messages
+                List<Message> msgs = new List<Message>();
+                for (int i = 0; i < 1000; i++)
                 {
-                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
-                    Metadata = "some-metadata",
-                    Tags = new Dictionary<string, string>()
-                {
-                    {"Action",$"SendQueueMessage" }
+                    msgs.Add(new KubeMQ.SDK.csharp.Queue.Message
+                    {
+                        MessageID = i.ToString(),
+                        Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray($"im Message {i}"),
+                        Metadata = "some-metadata",
+                        Tags = new Dictionary<string, string>()/* ("Action", $"Batch_{testGui}_{i}")*/ 
+                        {
+                            {"Action",$"Batch_{i}"}
+                        }
+                    });
                 }
-                });
-                if (res.IsError)
+
+                //Batch send messages
+                var resBatch = queue.Batch(msgs);
+                if (resBatch.HaveErrors)
                 {
-                    Console.WriteLine($"message enqueue error, error:{res.Error}");
+                    Console.WriteLine($"message sent batch has errors");
+                    System.Environment.Exit(1);
                 }
                 else
                 {
-                    Console.WriteLine($"message sent at, {res.SentAt}");
+                    Console.WriteLine($"{resBatch.Results.Count()} messages sent");    
                 }
+                
             }
+
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
@@ -40,7 +54,7 @@ namespace ackall
 
             Thread.Sleep(1000);
 
-            var ackmsg = queue.AckAllQueueMessages();
+            var ackmsg = queue.AckAll(2);
             {
                 if (ackmsg.IsError)
                 {

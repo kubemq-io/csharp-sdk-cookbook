@@ -14,7 +14,7 @@ namespace stream
             var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-stream-client-sender", KubeMQServerAddress);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                var res = queue.Send(new KubeMQ.SDK.csharp.Queue.Message
                 {
                     Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
                     Metadata = "some-metadata",
@@ -62,7 +62,7 @@ namespace stream
                              var ackRes = transaction.AckMessage(resRec.Message.Attributes.Sequence);
                              if (ackRes.IsError)
                              {
-                                 Console.WriteLine($"Error in ackall Message, error:{ackRes.Error}");
+                                 Console.WriteLine($"Error in acka Message, error:{ackRes.Error}");
                              }
                              else
                              {

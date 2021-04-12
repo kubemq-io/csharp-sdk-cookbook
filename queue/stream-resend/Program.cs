@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace resend
@@ -12,7 +13,7 @@ namespace resend
              KubeMQServerAddress = "localhost:50000";
 
             var sender = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-resend-client-sender", KubeMQServerAddress);
-            var res = sender.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+            var res = sender.Send(new KubeMQ.SDK.csharp.Queue.Message
             {
                 Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
                 Metadata = "some-metadata",
@@ -66,7 +67,27 @@ namespace resend
                 Console.WriteLine($"Message Resend error, error:{ex.Message}");
                 return;
             }
+            finally
+            {
+                transaction.Close();
+            }
+            try
+            {
+                var msg = queue.Pull("new-queue", 1, 2);
+                if (msg.IsError)
+                {
+                    Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                }
 
+                {
+                    Console.WriteLine($"{msg.Messages.Count()} messages received from new-queue");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
             Console.WriteLine("DONE");
         }
     }

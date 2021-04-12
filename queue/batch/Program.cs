@@ -7,7 +7,7 @@ using KubeMQ.Grpc;
 
 namespace batch
 {
-    class Program
+     class Program
     {
         static void Main(string[] args)
         {
@@ -33,7 +33,7 @@ namespace batch
                 }
 
                 //Batch send messages
-                var resBatch = queue.SendQueueMessagesBatch(msgs);
+                var resBatch = queue.Batch(msgs);
                 if (resBatch.HaveErrors)
                 {
                     Console.WriteLine($"message sent batch has errors");
@@ -56,7 +56,7 @@ namespace batch
 
             try
             {
-                var msg = queue.ReceiveQueueMessages(1000);
+                var msg = queue.Pull(1000,2);
                 if (msg.IsError)
                 {
                     Console.WriteLine($"message dequeue error, error:{msg.Error}");

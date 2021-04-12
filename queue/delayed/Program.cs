@@ -13,7 +13,7 @@ namespace delayed
         {
             string QueueName = "queue-delayed",
              KubeMQServerAddress = "localhost:50000";
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-delayed-client", null,12,KubeMQServerAddress,null);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-delayed-client", KubeMQServerAddress);
             try
             {
                 //Simple send Bulk of messages
@@ -37,7 +37,7 @@ namespace delayed
                 }
 
                 //Batch send messages
-                var resBatch = queue.SendQueueMessagesBatch(msgs);
+                var resBatch = queue.Batch(msgs);
                 if (resBatch.HaveErrors)
                 {
                     Console.WriteLine($"message sent batch has errors");
@@ -56,11 +56,28 @@ namespace delayed
                 System.Environment.Exit(1);
             }
 
-            Thread.Sleep(1000);
-
+            Thread.Sleep(2000);
             try
             {
-                var msg = queue.ReceiveQueueMessages(1000);
+                Console.WriteLine("Pulling after 2 seconds");
+                var msg = queue.Pull(1000,5);
+                if (msg.IsError)
+                {
+                    Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                }
+                {
+                    Console.WriteLine($"{msg.Messages.Count()} messages received");    
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            Thread.Sleep(5000);
+            try
+            {
+                Console.WriteLine("Pulling after 12 seconds");
+                var msg = queue.Pull(1000,12);
                 if (msg.IsError)
                 {
                     Console.WriteLine($"message dequeue error, error:{msg.Error}");

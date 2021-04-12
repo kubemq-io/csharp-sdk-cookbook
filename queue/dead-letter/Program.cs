@@ -1,7 +1,9 @@
 ﻿using KubeMQ.SDK.csharp.Queue;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using KubeMQ.Grpc;
 
 namespace deadLetter
 {
@@ -10,18 +12,25 @@ namespace deadLetter
         static void Main(string[] args)
         {
             string QueueName = "queue-dead-letter",
-             KubeMQServerAddress = "localhost:50000";
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-dead-letter-client", KubeMQServerAddress);
+                KubeMQServerAddress = "localhost:50000";
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-dead-letter-client",
+                KubeMQServerAddress);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                var res = queue.Send(new KubeMQ.SDK.csharp.Queue.Message
                 {
-                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
+                    Queue = "queue",
+                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message with dead-letter"),
+                    Policy = new QueueMessagePolicy()
+                    {
+                        MaxReceiveCount = 1,
+                        MaxReceiveQueue = "queue-dead-letter"
+                    },
                     Metadata = "some-metadata",
                     Tags = new Dictionary<string, string>()
-                {
-                    {"Action",$"SendQueueMessage" }
-                }
+                    {
+                        {"Action", $"SendQueueMessage"}
+                    }
                 });
                 if (res.IsError)
                 {
@@ -31,46 +40,78 @@ namespace deadLetter
                 {
                     Console.WriteLine($"message sent at, {res.SentAt}");
                 }
-
-                //Simple send Bulk of messages
-                List<Message> msgs = new List<Message>();
-                for (int i = 0; i < 5; i++)
-                {
-                    msgs.Add(new KubeMQ.SDK.csharp.Queue.Message
-                    {
-                        MessageID = i.ToString(),
-                        Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray($"im Message {i}"),
-                        Metadata = "some-metadata",
-                        Tags = new Dictionary<string, string>()/* ("Action", $"dead-letter_{testGui}_{i}")*/ 
-                    {
-                        {"Action",$"dead-letter_{i}"}
-                    }
-                    });
-                }
-
-                var resSend = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
-                {
-                    Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("some-simple_queue-queue-message"),
-                    Metadata = "emptyMeta",
-                    Policy = new KubeMQ.Grpc.QueueMessagePolicy
-                    {
-                        MaxReceiveCount = 3,
-                        MaxReceiveQueue = "DeadLetterQueue"
-                    }
-                });
-                if (resSend.IsError)
-                {
-                    Console.WriteLine($"Message enqueue error, error:{resSend.Error}");
-                }
             }
-
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 System.Environment.Exit(1);
             }
-            Console.WriteLine("DONE");
-            Console.ReadLine();
-        }
+
+            var receiver = new KubeMQ.SDK.csharp.Queue.Queue("queue", "Csharp-sdk-cookbook-queues-stream-client",
+                    KubeMQServerAddress);
+                var transaction = receiver.CreateTransaction();
+                KubeMQ.SDK.csharp.Queue.Stream.TransactionMessagesResponse resRec;
+                try
+                {
+                    resRec = transaction.Receive(1, 5);
+                    if (resRec.IsError)
+                    {
+                        Console.WriteLine($"Message dequeue error, error:{resRec.Error}");
+                        transaction.Close();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine(
+                            $"message received, body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(resRec.Message.Body)}, rejecting");
+                        try
+                        {
+                            var rejRes = transaction.RejectMessage(resRec.Message.Attributes.Sequence);
+                            if (rejRes.IsError)
+                            {
+                                Console.WriteLine($"Error in reject Message, error:{rejRes.Error}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Reject completed");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
+                        finally
+                        {
+                            transaction.Close();
+                        }
+                    }
+
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine($"Message Receive error, error:{ex.Message}");
+                }
+            
+                try
+                {
+                    var msg = queue.Pull("queue-dead-letter", 1, 1);
+                    if (msg.IsError)
+                    {
+                        Console.WriteLine($"message dequeue error, error:{msg.Error}");
+                    }
+
+                    {
+                        Console.WriteLine($"{msg.Messages.Count()} messages received from dead-letter queue");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+
+ 
+           }
+        
     }
 }

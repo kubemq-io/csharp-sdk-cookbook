@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace extend
 {
-    class Program
+   class Program
     {
         static void Main(string[] args)
         {
@@ -12,7 +12,7 @@ namespace extend
              KubeMQServerAddress = "localhost:50000";
 
             var sender = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-extend-client-sender", KubeMQServerAddress);
-            var res = sender.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+            var res = sender.Send(new KubeMQ.SDK.csharp.Queue.Message
             {
                 Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
                 Metadata = "some-metadata",
@@ -79,12 +79,17 @@ namespace extend
                 {
                     Console.WriteLine($"Ack message error:{resAck.Error}");
                 }
+
                 Console.WriteLine("Ack done");
             }
             catch (System.Exception ex)
             {
 
                 Console.WriteLine($"Ack message error:{ex.Message}");
+            }
+            finally
+            {
+                transaction.Close();
             }
 
             Console.WriteLine("DONE");

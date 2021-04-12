@@ -8,14 +8,15 @@ namespace multicast
     {
         static void Main(string[] args)
         {
-            string QueueName = "queue.a;queue.b;queue.c",
-             KubeMQServerAddress = "localhost:50000";
+            
+            string KubeMQServerAddress = "localhost:50000";
 
-            var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-multicast-client", KubeMQServerAddress);
+            var queue = new KubeMQ.SDK.csharp.Queue.Queue("", "Csharp-sdk-cookbook-queues-multicast-client", KubeMQServerAddress);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                var res = queue.Send(new KubeMQ.SDK.csharp.Queue.Message
                 {
+                    Queue = "queue.a;queue.b;queue.c",
                     Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
                     Metadata = "some-metadata",
                     Tags = new Dictionary<string, string>()
@@ -39,8 +40,8 @@ namespace multicast
             }
 
 
-            var queueA = new KubeMQ.SDK.csharp.Queue.Queue("queue.a", "Csharp-sdk-cookbook-queues-multicast-client-A", KubeMQServerAddress);
-            var msgA = queueA.ReceiveQueueMessages();
+            
+            var msgA = queue.Pull("queue.a",1,1);
             if (msgA.IsError)
             {
                 Console.WriteLine($"message error, error:{msgA.Error}");
@@ -51,8 +52,8 @@ namespace multicast
 
             }
 
-            var queueB = new KubeMQ.SDK.csharp.Queue.Queue("queue.b", "Csharp-sdk-cookbook-queues-multicast-client-B", KubeMQServerAddress);
-            var msgB = queueB.ReceiveQueueMessages();
+         
+            var msgB = queue.Pull("queue.b",1,1);
             if (msgB.IsError)
             {
                 Console.WriteLine($"message error, error:{msgB.Error}");
@@ -62,9 +63,7 @@ namespace multicast
                 Console.WriteLine($"queue B message received body:{KubeMQ.SDK.csharp.Tools.Converter.FromByteArray(item.Body)}");
 
             }
-
-            var queueC = new KubeMQ.SDK.csharp.Queue.Queue("queue.c", "Csharp-sdk-cookbook-queues-multicast-client-C", KubeMQServerAddress);
-            var msgC = queueC.ReceiveQueueMessages();
+            var msgC = queue.Pull("queue.c",1,1);
             if (msgC.IsError)
             {
                 Console.WriteLine($"message error, error:{msgC.Error}");

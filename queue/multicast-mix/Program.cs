@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace multicastMix
 {
-    class Program
+      class Program
     {
         static void Main(string[] args)
         {
@@ -63,7 +63,7 @@ namespace multicastMix
             var queue = new KubeMQ.SDK.csharp.Queue.Queue(QueueName, "Csharp-sdk-cookbook-queues-multicast-mix-client-C", KubeMQServerAddress);
             try
             {
-                var res = queue.SendQueueMessage(new KubeMQ.SDK.csharp.Queue.Message
+                var res = queue.Send(new KubeMQ.SDK.csharp.Queue.Message
                 {
                     Body = KubeMQ.SDK.csharp.Tools.Converter.ToByteArray("hi, new message"),
                     Metadata = "some-metadata",
@@ -89,7 +89,7 @@ namespace multicastMix
 
 
             var queueA = new KubeMQ.SDK.csharp.Queue.Queue("q1", "Csharp-sdk-cookbook-queues-multicast-mix-client-A", KubeMQServerAddress);
-            var msgA = queueA.ReceiveQueueMessages();
+            var msgA = queueA.Pull(1,1);
             if (msgA.IsError)
             {
                 Console.WriteLine($"message error, error:{msgA.Error}");
